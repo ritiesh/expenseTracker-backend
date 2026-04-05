@@ -1,14 +1,16 @@
-# Use Java 17 base image
-FROM openjdk:17-jdk-slim
-
-# Set working directory
+FROM eclipse-temurin:17-jdk-alpine AS build
 WORKDIR /app
 
-# Copy jar file (after build)
-COPY target/expenseTracker-0.0.1-SNAPSHOT.jar app.jar
+COPY .mvn .mvn
+COPY mvnw .
+COPY pom.xml .
+RUN ./mvnw dependency:go-offline -B
 
-# Expose port
+COPY src ./src
+RUN ./mvnw clean package -DskipTests
+
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
-
-# Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
